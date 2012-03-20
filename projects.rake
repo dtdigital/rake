@@ -95,7 +95,7 @@ task :newproject do
       system %Q{mkdir "./assets"}
       system %Q{mv "./css" "./assets/css"}
       system %Q{mv "./images" "./assets/images"}
-      system %Q{mv "./js" "./assets/javascript"}
+      system %Q{mv "./js" "./assets/js"}
       system %Q{mv "./coffee" "./assets/coffee"}
 
       Rake::Task['grab_flat_server'].invoke
