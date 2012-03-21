@@ -15,17 +15,11 @@ desc "Set up an HTML5 Boilerplate project"
 task :newhtml5 => [:init] do
   `rm -rf ./css`
   `rm -rf ./js`
-  `git clone https://github.com/h5bp/html5-boilerplate.git`
+  `git clone git@github.com:dtdigital/html5-boilerplate.git`
   `mv ./html5-boilerplate/* ./`
   `mv ./html5-boilerplate/.gitattributes ./.gitattributes`
   `mv ./html5-boilerplate/.gitignore ./.gitignore`
-  `mv ./html5-boilerplate/.htaccess ./.htaccess`
-  `rm ./.htaccess`
   `rm -rf ./img`
-  `rm ./readme.md`
-  `rm ./robots.txt`
-  `rm ./humans.txt`
-  `rm ./404.html`
   `mv apple-touch-icon* ./images`
   `mv favicon.ico ./images`
   `touch css/application.css`
@@ -57,20 +51,24 @@ end
 
 desc "Create dt config file"
 task :dtconfig do
-      yaml = %q{
+  yaml = %q{
+
 config:
   path_to_file_server: ""
-  assets_folder_name: "assets"
 
+# Add folders or files
+# to package up
+# relative to project root
 folders:
   css: "css"
   images: "images"
   js: "js"
-      }
 
-      config = File.new("./dt.yaml", "w")
-      config.write(yaml)
-      config.close
+  }
+
+  config = File.new("./dt.yaml", "w")
+  config.write(yaml)
+  config.close
 end
 
 
@@ -118,7 +116,7 @@ task :package_project do
   # #
   # TODO: Move the current directory contents into old
   # Copy over the new directory
-  # 
+
 
   @localDirectory = Dir.getwd
   @date = Time.new
@@ -133,18 +131,38 @@ task :package_project do
 
   def package_and_copy_current_directory(_p)
     Dir.chdir(@localDirectory)
+    folders = @config["folders"]
     assets_folder = @config["config"]["assets_folder_name"]
-    
-    #TODO: make this a dynamic loop, so that the folders can be (n)
 
-    css = @config["folders"]["css"]
-    images = @config["folders"]["images"]
-    js = @config["folders"]["js"]
+    # If hash then depend on whether assets folder is set or not 
+    # as to whether it's prepended to the copy path
+    if folders.class() == Hash
+      if assets_folder
+        if not Dir.exists? "./#{assets_folder}"
+          print "ERROR: assets folder is set but does not exists \n"
+        end
+        # move and prepend assets folder before copying 
+        # ie flat file server
+        folders.each do |key, value|
+          system %Q{cp -r "./#{assets_folder}/#{value}" "#{_p}"}
+        end
+      else
+        # just copy as outlined
+        folders.each do |key, value|
+          system %Q{cp -r "./#{value}" "#{_p}"}
+        end
+      end
+    else
+      # * wildcard just move all the buggers over
+      Dir['*'].each do |file|
+        system %Q{cp -r "#{file.sub('.erb', '')}" "#{_p}"}
+      end
+    end
+    # clean up by removing the dt.yaml file
 
-    system %Q{cp -r "./#{assets_folder}/#{css}" "#{_p}"}
-    system %Q{cp -r "./#{assets_folder}/#{images}" "#{_p}"}
-    system %Q{cp -r "./#{assets_folder}/#{js}" "#{_p}"}
-    system %Q{cp -r "./index.html" "#{_p}"}
+    if File.exists? "#{_p}/dt.yaml"
+      system %Q{rm "#{_p}/dt.yaml"}    
+    end
   end
 
   if Dir.exists? "#{@path_parent}/#{@date.strftime("%Y%m%d")}"  
@@ -174,7 +192,6 @@ task :package_project do
         end
       end
     end
-
     make_current_working_directory()
 
   else 
