@@ -20,17 +20,53 @@ end
 
 desc "Set up a new Email Template Project"
 task :newemail do
-  `git clone https://github.com/seanpowell/Email-Boilerplate.git .`
-  `rm ./README.markdown`
-  `rm ./contributors.txt`
-  `rm ./email.html`
-  `mv ./email_lite.html ./email.html`
-  Rake::Task["_:gitinit"].invoke
+  print "Project Job Number: "
+  if (project = $stdin.gets.chomp)
+
+    path = File.join(Dir.getwd, project)
+    ENV['PROJECT_ID'] = project
+
+    `mkdir #{path}`
+    Dir.chdir(path)
+    `git clone git@github.com:dtdigital/Email-Boilerplate.git .`
+    `mkdir images`
+    Rake::Task["_:gitinit"].invoke
+    Rake::Task["project:config_email"].invoke
+    ENV['PROJECT_ID'] = nil
+  end
 end
 
 desc "Create dt config file"
-task :config do
-  yaml = %q{
+task :config_email, :id do |t, args|
+  yaml = %Q{
+
+id: "#{ENV['PROJECT_ID']}"
+
+config:
+  path_to_file_server: ""
+
+# Add folders or files
+# to package up
+# relative to project root
+folders:
+  images: "images"
+  index:  "email.html"
+
+image_folder_to_upload_to_s3: "images" 
+
+  }
+
+  config = File.new("./dt.yaml", "w")
+  config.write(yaml)
+  config.close
+end
+
+
+desc "Create dt config file"
+task :config, :id do |t, args|
+  yaml = %Q{
+
+id: "#{ENV['PROJECT_ID']}"
 
 config:
   path_to_file_server: ""
@@ -57,6 +93,7 @@ task :newproject do
   if (project = $stdin.gets.chomp)
 
     path = File.join(Dir.getwd, project)
+    ENV['PROJECT_ID'] = project
 
     if Dir.exists? path
       puts "ERROR: Directory already exists, exiting...."
@@ -82,7 +119,7 @@ task :newproject do
       when 'n'
         false
       end
-
+      ENV['PROJECT_ID'] = nil
     end
   end
 end
