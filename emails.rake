@@ -80,19 +80,6 @@ class Room
   end
 end
 
-# Usage:
-#
-# room = Campfire.room(1)
-# room.join
-# room.lock
-# 
-# room.message 'This is a top secret'
-# room.paste "FROM THE\n\nAP-AYE"
-# room.play_sound 'rimshot'
-# 
-# room.unlock
-# room.leave
-
 namespace :email do
 
 desc "Compile non inline styles to inline styles for eDMs"
@@ -142,7 +129,7 @@ task :litmus_upload do
     puts "== Starting Litmus test"
 
     company = "soi"
-    doc = Nokogiri::HTML(File.open("email_compiled.html")) 
+    doc = Nokogiri::HTML(File.open("_email_compiled.html")) 
     xml = %Q{
       <?xml version="1.0"?>
       <test_set>
@@ -215,6 +202,7 @@ task :litmus_upload do
       puts "== Test uploaded successfully to Litmus https://soi.litmus.com/tests/"+xml.xpath("//id").first.content
       room = Campfire.room(490376)
       room.message "Litmus test for job number #{ENV['PROJECT_ID']} has been successfully uploaded: https://soi.litmus.com/tests/"+xml.xpath("//id").first.content
+      File.delete("_email_compiled.html")
     else
       res.value
       puts "ERROR: inline service returned #{res.value}"
@@ -244,14 +232,30 @@ task :replace_img_src do
         src = src.gsub!(/(^images)/, loc)
         img['src'] = src
   end
-  system %Q{rm "email_compiled.html"}
-  file = File.new("email_compiled.html", "w")
+  system %Q{rm "_email_compiled.html"}
+  file = File.new("_email_compiled.html", "w")
   file.write(doc)
   file.close
   puts "== Done"
 
 end
 
+desc "Add blank targets to all anchor tags in email template"
+task :add_target_blank do
+  require 'nokogiri'
+  doc = Nokogiri::HTML(File.open("email.html"))
+  puts "== Adding target='_blank' to anchor tags"
+  doc.xpath("//a").each do |anchor|
+    target = anchor['target']
+    if target == nil
+      anchor['target'] = "_blank"
+    end
+  end
+  system %Q{rm "email.html"}
+  file = File.new("email.html", "w")
+  file.write(doc)
+   file.close
+end
 
 desc "Upload Images to S3"
 task :upload_images, :env, :branch do |t, args|
