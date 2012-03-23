@@ -2,10 +2,10 @@
 
 A collection of scripts for automating some repetive tasks broken into the following (as at time of writing) categories:
 
-* Projects
-* Email
-* Images
-* Files
+* [Projects](https://github.com/dtdigital/rake/wiki/Projects) 
+* [Email](https://github.com/dtdigital/rake/wiki/Emails)
+* [Images](https://github.com/dtdigital/rake/wiki/Images)
+* [Files](https://github.com/dtdigital/rake/wiki/Files)
 
 Check the rake task description for more information
 
