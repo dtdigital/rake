@@ -61,6 +61,10 @@ image_folder_to_upload_to_s3: "images"
   config.close
 end
 
+desc "Compile coffeescript files"
+task :coffeescript_compile do
+  system %Q{coffee -c ./assets/coffee}
+end
 
 desc "Create dt config file"
 task :config, :id do |t, args|
@@ -75,9 +79,11 @@ config:
 # to package up
 # relative to project root
 folders:
-  css: "css"
-  images: "images"
-  js: "js"
+  css: "assets/css"
+  images: "assets/images"
+  js: "assets/js"
+  coffee: "assets/coffee"
+  index: "index.html"
 
   }
 
@@ -132,10 +138,18 @@ task :package_project do
   # Copy over the new directory
 
 
+
   @localDirectory = Dir.getwd
+
   @date = Time.new
   @config = YAML.load_file("dt.yaml")
   @path_parent = @config["config"]["path_to_file_server"]
+
+  @coffee = @config["folders"]["coffee"]
+
+  if @coffee
+    Rake::Task["project:coffeescript_compile"].invoke
+  end
 
   def make_current_working_directory()
     _p = "#{@path_parent}/#{@date.strftime("%Y%m%d")}"
