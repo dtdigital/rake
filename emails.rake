@@ -224,12 +224,20 @@ end
 desc "Replace img tag src to S3 location"
 task :replace_img_src do
   require 'nokogiri'
+  require 'yaml'
+
+  @config = YAML.load_file("dt.yaml")
+  @images = @config['folders']['images']
+  if @images == nil
+    puts "ERROR: images folder name not set"
+  end
+
   loc = "http://"+ENV['S3_ID']+"/"+ENV['S3_BUCKET_ID']+"/"+ENV['PROJECT_ID']
   doc = Nokogiri::HTML(File.open("email_compiled.html"))
   puts "== Replacing img src to S3"
   doc.xpath("//img").each do |img|
         src = img['src']
-        src = src.gsub!(/(^images)/, loc)
+        src = src.gsub!(/(^#{@images})/, loc)
         img['src'] = src
   end
   system %Q{rm "_email_compiled.html"}
