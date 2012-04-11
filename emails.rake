@@ -129,7 +129,7 @@ task :litmus_upload do
     puts "== Starting Litmus test"
 
     company = "soi"
-    doc = Nokogiri::HTML(File.open("_email_compiled.html")) 
+    doc = Nokogiri::HTML(File.open("____email_compiled.html")) 
     xml = %Q{
       <?xml version="1.0"?>
       <test_set>
@@ -189,7 +189,7 @@ task :litmus_upload do
     req.content_type = 'application/xml'
     req.body = xml
 
-    #puts req.body
+    puts req.body
 
     res = Net::HTTP.start(uri.hostname, uri.port, :use_ssl => uri.scheme == 'https') do |http|
       http.request(req)
@@ -202,7 +202,7 @@ task :litmus_upload do
       puts "== Test uploaded successfully to Litmus https://soi.litmus.com/tests/"+xml.xpath("//id").first.content
       room = Campfire.room(490376)
       room.message "Litmus test for job number #{ENV['PROJECT_ID']} has been successfully uploaded: https://soi.litmus.com/tests/"+xml.xpath("//id").first.content
-      File.delete("_email_compiled.html")
+      File.delete("_____email_compiled.html")
     else
       res.value
       puts "ERROR: inline service returned #{res.value}"
@@ -212,9 +212,16 @@ end
 
 
 desc "Test Email general wrapper"
-task :test do 
+task :test, :toinline do |t, args|
+
+  toinline = args.toinline || false
+
   Rake::Task["email:upload_images"].invoke
-  Rake::Task["email:toinline"].invoke
+  
+  if toinline
+    Rake::Task["email:toinline"].invoke
+  end
+
   Rake::Task["email:replace_img_src"].invoke
   Rake::Task["email:litmus_upload"].invoke
   ENV['PROJECT_ID'] = nil
@@ -229,7 +236,7 @@ task :replace_img_src do
   @config = YAML.load_file("dt.yaml")
   @images = @config['folders']['images']
   if @images == nil
-    puts "ERROR: images folder name not set"
+    uts "ERROR: images folder name not set"
   end
 
   loc = "http://"+ENV['S3_ID']+"/"+ENV['S3_BUCKET_ID']+"/"+ENV['PROJECT_ID']
@@ -240,12 +247,11 @@ task :replace_img_src do
         src = src.gsub!(/(^#{@images})/, loc)
         img['src'] = src
   end
-  system %Q{rm "_email_compiled.html"}
-  file = File.new("_email_compiled.html", "w")
+
+  file = File.new("____email_compiled.html", "w")
   file.write(doc)
   file.close
   puts "== Done"
-
 end
 
 desc "Add blank targets to all anchor tags in email template"
