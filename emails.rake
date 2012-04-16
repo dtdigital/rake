@@ -130,8 +130,8 @@ task :litmus_upload do
 
     company = "soi"
     doc = Nokogiri::HTML(File.open("____email_compiled.html")) 
+    File.delete("____email_compiled.html")
     xml = %Q{
-      <?xml version="1.0"?>
       <test_set>
         <applications type="array">
           <application>
@@ -189,7 +189,7 @@ task :litmus_upload do
     req.content_type = 'application/xml'
     req.body = xml
 
-    puts req.body
+    #puts req.body
 
     res = Net::HTTP.start(uri.hostname, uri.port, :use_ssl => uri.scheme == 'https') do |http|
       http.request(req)
@@ -202,11 +202,12 @@ task :litmus_upload do
       puts "== Test uploaded successfully to Litmus https://soi.litmus.com/tests/"+xml.xpath("//id").first.content
       room = Campfire.room(490376)
       room.message "Litmus test for job number #{ENV['PROJECT_ID']} has been successfully uploaded: https://soi.litmus.com/tests/"+xml.xpath("//id").first.content
-      File.delete("_____email_compiled.html")
     else
       res.value
       puts "ERROR: inline service returned #{res.value}"
     end
+    
+
 
 end
 
@@ -215,6 +216,9 @@ desc "Test Email general wrapper"
 task :test, :toinline do |t, args|
 
   toinline = args.toinline || false
+  if toinline
+    ENV['toinline'] = toinline
+  end
 
   Rake::Task["email:upload_images"].invoke
   
@@ -240,7 +244,13 @@ task :replace_img_src do
   end
 
   loc = "http://"+ENV['S3_ID']+"/"+ENV['S3_BUCKET_ID']+"/"+ENV['PROJECT_ID']
-  doc = Nokogiri::HTML(File.open("email_compiled.html"))
+ 
+  if ENV['toinline']
+    doc = Nokogiri::HTML(File.open("email_compiled.html"))
+  else
+    doc = Nokogiri::HTML(File.open("email.html"))
+  end
+  
   puts "== Replacing img src to S3"
   doc.xpath("//img").each do |img|
         src = img['src']
